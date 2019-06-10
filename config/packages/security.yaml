@@ -1,24 +1,56 @@
 security:
     # https://symfony.com/doc/current/security.html#where-do-users-come-from-user-providers
+    encoders:
+        App\Entity\UsUser:
+            algorithm: bcrypt
+
     providers:
-        in_memory: { memory: ~ }
+        database:
+            entity:
+                class: App\Entity\UsUser
+                property: apiKey
+        
+        login:
+            entity:
+                class: App\Entity\UsUser
+                property: login
+
+        access_keys:
+            entity:
+                class: App\Entity\UsApiKey
+                property: apiKey
     firewalls:
         dev:
             pattern: ^/(_(profiler|wdt)|css|images|js)/
             security: false
+
+        login:
+            pattern: /login
+            provider: login
+            anonymous: true
+            stateless: true
+
         main:
             anonymous: true
+            methods: [GET,POST,OPTION,PUT,PATCH,DELETE]
+            pattern: ^/
+            provider: database
 
-            # activate different ways to authenticate
+            logout: ~
+            guard:
+                authenticators:
+                    - App\Security\TokenAuthenticator
+            stateless: true
 
-            # http_basic: true
-            # https://symfony.com/doc/current/security.html#a-configuring-how-your-users-will-authenticate
-
-            # form_login: true
-            # https://symfony.com/doc/current/security/form_login_setup.html
+            http_basic: ~
 
     # Easy way to control access for large sections of your site
     # Note: Only the *first* access control that matches will be used
     access_control:
+        - { path: ^/*, roles: IS_AUTHENTICATED_ANONYMOUSLY}
         # - { path: ^/admin, roles: ROLE_ADMIN }
         # - { path: ^/profile, roles: ROLE_USER }
+
+    role_hierarchy:
+        ROLE_USER: IS_AUTHENTICATED_ANONYMOUSLY
+        ROLE_ADMIN: ROLE_USER
